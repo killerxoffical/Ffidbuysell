@@ -87,6 +87,18 @@
         .input-box { width: 100%; background: var(--surface-light); border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 13px; }
         .input-box:focus { border-color: var(--primary); }
 
+        /* CUSTOM SELECT (PREMIUM BOT DROPDOWN) */
+        .custom-select-wrapper { position: relative; width: 100%; user-select: none; }
+        .custom-select-trigger { background: var(--surface-light); border: 1px solid var(--border); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: #fff; font-size: 13px; transition: 0.3s; }
+        .custom-select-trigger:hover { border-color: var(--primary); }
+        .custom-options { position: absolute; top: 105%; left: 0; right: 0; background: #111; border: 1px solid var(--border); border-radius: 8px; z-index: 10; display: none; max-height: 200px; overflow-y: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .custom-options.open { display: block; animation: slideDown 0.2s ease; }
+        @keyframes slideDown { from{opacity:0; transform:translateY(-5px);} to{opacity:1; transform:translateY(0);} }
+        .custom-option { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s; }
+        .custom-option:last-child { border-bottom: none; }
+        .custom-option:hover { background: #222; color: var(--primary); }
+        .custom-option img { width: 25px; height: 25px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+
         /* OVERLAYS */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; transform: translateY(100%); transition: 0.3s; display: flex; flex-direction: column; }
         .overlay.open { transform: translateY(0); }
@@ -109,14 +121,20 @@
         .msg-row.left { align-self: flex-start; }
         .msg-row.right { align-self: flex-end; align-items: flex-end; }
         .msg-name { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
-        .msg-bubble { background: var(--surface-light); padding: 10px 15px; border-radius: 12px; font-size: 13px; border: 1px solid var(--border); position: relative; }
+        .msg-bubble { background: var(--surface-light); padding: 10px 15px; border-radius: 12px; font-size: 13px; border: 1px solid var(--border); position: relative; white-space: pre-wrap; word-break: break-word; }
         .msg-row.right .msg-bubble { background: rgba(0,255,170,0.1); border-color: rgba(0,255,170,0.3); color: var(--primary); }
         .msg-row.admin .msg-bubble { background: rgba(255,215,0,0.1); border-color: var(--gold); color: var(--gold); }
         
-        .msg-delete-icon { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--secondary); cursor: pointer; padding: 5px; opacity: 0.5; }
-        .msg-delete-icon:hover { opacity: 1; }
+        .msg-delete-icon, .msg-edit-icon { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; cursor: pointer; padding: 5px; opacity: 0.5; transition: 0.2s; }
+        .msg-delete-icon { color: var(--secondary); }
+        .msg-edit-icon { color: var(--info); }
+        .msg-delete-icon:hover, .msg-edit-icon:hover { opacity: 1; }
+        
+        /* Positioning icons based on left/right alignment */
         .msg-row.left .msg-delete-icon { right: -30px; }
+        .msg-row.left .msg-edit-icon { right: -55px; }
         .msg-row.right .msg-delete-icon { left: -30px; }
+        .msg-row.right .msg-edit-icon { left: -55px; }
 
         .chat-input-area { padding: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
         .chat-tools { display: flex; gap: 8px; }
@@ -133,7 +151,7 @@
         .img-upload-box i { font-size: 24px; color: var(--text-muted); position: absolute; }
 
         .img-slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 15px; }
-        .slot { position: relative; aspect-ratio: 1; background: var(--surface-light); border: 1px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .slot { position: relative; aspect-ratio: 1; background: var(--surface-light); border: 1px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;}
         .slot img { width: 100%; height: 100%; object-fit: cover; }
 
         /* LOADER & TOAST */
@@ -178,10 +196,17 @@
             </div>
         </div>
         
-        <h3 style="margin-top: 20px; margin-bottom: 15px; font-family:'Rajdhani'; color:var(--text-muted);">BOT OVERVIEW</h3>
-        <div class="dash-card" style="border-color:var(--info);">
-            <i class="fas fa-robot" style="color:var(--info)"></i>
-            <h3 id="stat-bot-wallet" style="color:var(--info)">0 ৳</h3><p>Total Bot Earnings (Wallet)</p>
+        <h3 style="margin-top: 20px; margin-bottom: 15px; font-family:'Rajdhani'; color:var(--text-muted);">GLOBAL CONTROL</h3>
+        <div class="dash-grid">
+            <div class="dash-card" style="border-color:var(--info);">
+                <i class="fas fa-robot" style="color:var(--info)"></i>
+                <h3 id="stat-bot-wallet" style="color:var(--info)">0 ৳</h3><p>Bot Earnings (Wallet)</p>
+            </div>
+            <div class="dash-card" style="border-color:var(--primary);">
+                <i class="fas fa-shopping-cart" style="color:var(--primary)"></i>
+                <h3 id="stat-total-sold" style="color:var(--primary)">0</h3><p>Global Total Sold</p>
+                <button class="btn btn-outline" style="font-size:10px; padding:4px 10px; margin-top:8px; border-color:var(--primary); color:var(--primary);" onclick="admin.dashboard.editTotalSold()">EDIT</button>
+            </div>
         </div>
     </div>
 
@@ -336,9 +361,15 @@
                     <label>Bot Display Name</label>
                     <input type="text" id="bot-name" class="input-box" placeholder="e.g. Pro Seller BD">
                 </div>
-                <div class="input-group">
-                    <label>Fake Deals Completed (To build trust)</label>
-                    <input type="number" id="bot-deals" class="input-box" placeholder="e.g. 45">
+                <div class="dash-grid" style="margin-bottom: 0;">
+                    <div class="input-group">
+                        <label>Deals Completed</label>
+                        <input type="number" id="bot-deals" class="input-box" placeholder="e.g. 45">
+                    </div>
+                    <div class="input-group">
+                        <label>Deals Pending</label>
+                        <input type="number" id="bot-pending-deals" class="input-box" placeholder="e.g. 2">
+                    </div>
                 </div>
                 
                 <button class="btn" style="width:100%; margin-top:10px;" id="bot-save-btn" onclick="admin.bots.save()">CREATE BOT</button>
@@ -359,10 +390,21 @@
                 <input type="hidden" id="mp-pid">
                 <input type="hidden" id="mp-mode"> <!-- 'create' or 'edit' -->
 
-                <!-- Only show when creating a Bot Post -->
+                <!-- Only show when creating a Bot Post. Premium Custom Dropdown -->
                 <div class="input-group" id="mp-bot-select-group">
                     <label>Select Bot (Seller)</label>
-                    <select id="mp-bot-id" class="input-box" style="background:var(--bg);"></select>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select-trigger" onclick="document.getElementById('bot-custom-options').classList.toggle('open'); event.stopPropagation();">
+                            <div id="bot-select-display" style="display:flex; align-items:center; gap:10px;">
+                                <span>Select a Bot...</span>
+                            </div>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="custom-options" id="bot-custom-options">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                    <input type="hidden" id="mp-bot-id">
                 </div>
                 
                 <div class="input-group">
@@ -405,6 +447,13 @@
                             <option>Other</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- NEW: Custom Date/Time for Post -->
+                <div class="input-group">
+                    <label>Custom Post Time (Optional)</label>
+                    <input type="datetime-local" id="mp-custom-time" class="input-box">
+                    <p style="font-size:10px; color:#888; margin-top:4px;">Used for "Time Ago". Leave empty for Current Time.</p>
                 </div>
 
                 <div class="input-group">
@@ -488,6 +537,20 @@
                 xhr.send(file);
             });
         }
+        
+        // Global listener to close custom dropdowns
+        window.addEventListener('click', function() {
+            const dropdowns = document.querySelectorAll('.custom-options');
+            dropdowns.forEach(d => d.classList.remove('open'));
+        });
+
+        // Date formatter for datetime-local input
+        function formatDateTimeLocal(timestamp) {
+            if (!timestamp) return '';
+            const d = new Date(timestamp);
+            const pad = n => n.toString().padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
 
         window.admin = {
             data: { users: {}, posts: {}, deals: {}, wallet_reqs: {}, bots: {} },
@@ -526,6 +589,9 @@
                     Object.values(window.admin.data.bots).forEach(b => botTotal += (b.wallet || 0));
                     document.getElementById('stat-bot-wallet').innerText = botTotal + " ৳";
                 });
+                onValue(ref(db, 'app_settings/total_sold'), s => {
+                    document.getElementById('stat-total-sold').innerText = s.val() || 0;
+                });
             },
 
             nav: (tab, el) => {
@@ -535,6 +601,21 @@
                 document.getElementById(`view-${tab}`).classList.remove('hidden');
                 
                 if(tab === 'posts') admin.posts.clearFilter(false);
+            },
+
+            dashboard: {
+                editTotalSold: async () => {
+                    const current = document.getElementById('stat-total-sold').innerText;
+                    let newVal = prompt("Enter new Global Total Sold Count:", current);
+                    if (newVal !== null && !isNaN(newVal)) {
+                        admin.ui.loading(true);
+                        try {
+                            await update(ref(db, 'app_settings'), { total_sold: Number(newVal) });
+                            admin.ui.toast("Total Sold updated!");
+                        } catch(e) { admin.ui.toast("Error updating", "error"); }
+                        admin.ui.loading(false);
+                    }
+                }
             },
 
             ui: {
@@ -648,6 +729,9 @@
                     document.getElementById('mp-desc').value = p.desc || '';
                     document.getElementById('mp-video').value = p.video_url || '';
                     
+                    // Set Custom Time if exists
+                    document.getElementById('mp-custom-time').value = formatDateTimeLocal(p.timestamp);
+
                     const isBoosted = !!(p.is_boosted && p.boost_until > Date.now());
                     document.getElementById('mp-boost').checked = isBoosted;
                     document.getElementById('mp-boost-days-div').style.display = isBoosted ? 'block' : 'none';
@@ -692,6 +776,7 @@
                     const server = document.getElementById('mp-server').value;
                     const desc = document.getElementById('mp-desc').value;
                     const video = document.getElementById('mp-video').value;
+                    const customTime = document.getElementById('mp-custom-time').value;
                     
                     const isBoosted = document.getElementById('mp-boost').checked;
                     const boostDays = Number(document.getElementById('mp-boost-days').value) || 30;
@@ -711,6 +796,11 @@
                         } else {
                             updates.is_boosted = false;
                             updates.boost_until = 0;
+                        }
+
+                        // Determine Custom Time
+                        if(customTime) {
+                            updates.timestamp = new Date(customTime).getTime();
                         }
 
                         // Upload Thumbnail if new
@@ -737,9 +827,14 @@
                         updates.images = finalImages;
 
                         if (mode === 'create') {
-                            updates.seller_uid = document.getElementById('mp-bot-id').value;
+                            const selectedBotId = document.getElementById('mp-bot-id').value;
+                            if(!selectedBotId) {
+                                admin.ui.loading(false); return admin.ui.toast("Please select a Bot Seller!", "error");
+                            }
+                            updates.seller_uid = selectedBotId;
                             updates.sold = false;
-                            updates.timestamp = serverTimestamp();
+                            if(!customTime) updates.timestamp = serverTimestamp();
+                            
                             await push(ref(db, 'posts'), updates);
                             admin.ui.toast("Post Created!");
                         } else {
@@ -754,6 +849,11 @@
                         admin.ui.loading(false);
                         admin.ui.toast("Error saving post", "error");
                     }
+                },
+                selectBot: (botId, botName, botPic) => {
+                    document.getElementById('mp-bot-id').value = botId;
+                    document.getElementById('bot-select-display').innerHTML = `<img src="${botPic}" style="width:25px; height:25px; border-radius:50%; object-fit:cover;"> <span>${botName}</span>`;
+                    document.getElementById('bot-custom-options').classList.remove('open');
                 }
             },
 
@@ -842,7 +942,7 @@
                         }
 
                         html += `
-                        <div class="list-card" style="border-left: 3px solid ${statusColor}; cursor:pointer;" onclick="admin.chat.open('${k}')">
+                        <div class="list-card" style="border-left: 3px solid ${statusColor}; cursor:pointer; padding-right:45px;" onclick="admin.chat.open('${k}')">
                             <div class="list-header">
                                 <div>
                                     <div style="font-weight:bold; font-family:'Rajdhani'; font-size:16px;">DEAL-${v.code} ${botBadge}</div>
@@ -855,9 +955,20 @@
                                 <span style="color:#aaa;">Fee: <span style="color:var(--gold); font-weight:bold;">${v.admin_fee || 0} ৳</span></span>
                             </div>
                             ${actionBtn}
+                            <!-- DELETE DEAL BUTTON -->
+                            <button class="btn btn-danger" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); padding:10px;" onclick="event.stopPropagation(); admin.deals.deleteDeal('${k}')"><i class="fas fa-trash"></i></button>
                         </div>`;
                     });
                     document.getElementById('deals-list').innerHTML = html || '<p style="color:#888; text-align:center;">No deals yet.</p>';
+                },
+                deleteDeal: async (did) => {
+                    if(!confirm("DELETE this deal permanently? This cannot be undone.")) return;
+                    admin.ui.loading(true);
+                    try {
+                        await remove(ref(db, `deals/${did}`));
+                        admin.ui.toast("Deal Permanently Deleted", "success");
+                    } catch(e) { admin.ui.toast("Error deleting deal", "error"); }
+                    admin.ui.loading(false);
                 },
                 completeDeal: async (did) => {
                     if(!confirm("User confirmed ID receipt. Transfer money to Seller?")) return;
@@ -978,13 +1089,16 @@
                     
                     window.admin.activeBotId = deal.seller_uid.startsWith('bot_') ? deal.seller_uid : null;
 
-                    // Setup Toggle buttons
-                    if(window.admin.activeBotId) {
+                    // Setup Toggle buttons: Disable As Bot if deal is completed/cancelled
+                    if(deal.status === 'completed' || deal.status === 'cancelled') {
+                        document.getElementById('mode-bot').style.display = 'none';
+                        admin.chat.setMode('admin'); // Force Admin mode
+                    } else if(window.admin.activeBotId) {
                         document.getElementById('mode-bot').style.display = 'block';
-                        admin.chat.setMode('bot'); // Default to Bot if bot is present
+                        admin.chat.setMode('bot'); // Default to Bot if active bot deal
                     } else {
                         document.getElementById('mode-bot').style.display = 'none';
-                        admin.chat.setMode('admin'); // Force admin
+                        admin.chat.setMode('admin'); // Force admin for normal deals
                     }
 
                     // Load Messages
@@ -1007,11 +1121,13 @@
                             if (m.type === 'image') contentHtml = `<img src="${m.url}" style="max-width:100%; border-radius:8px;">`;
                             if (m.type === 'audio') contentHtml = `<audio controls src="${m.url}" style="height:30px;"></audio>`;
 
-                            // Trash Icon for Admin to delete ANY message
+                            // Trash & Edit Icons for Admin to manipulate ANY message
+                            let editBtn = (m.type === 'text' || !m.type) ? `<i class="fas fa-pen msg-edit-icon" onclick="admin.chat.editMsg('${mid}', \`${m.text.replace(/`/g, '\\`')}\`)"></i>` : '';
                             let deleteBtn = `<i class="fas fa-trash msg-delete-icon" onclick="admin.chat.deleteMsg('${mid}')"></i>`;
 
                             b.innerHTML += `
                             <div class="msg-row ${alignment} ${cssClass}">
+                                ${editBtn}
                                 ${deleteBtn}
                                 <span class="msg-name">${senderName}</span>
                                 <div class="msg-bubble">${contentHtml}</div>
@@ -1034,6 +1150,16 @@
                     });
                     
                     document.getElementById('chat-input').value = '';
+                },
+
+                editMsg: async (mid, oldText) => {
+                    let newText = prompt("Edit message:", oldText);
+                    if(newText !== null && newText.trim() !== '') {
+                        try {
+                            await update(ref(db, `deals/${window.admin.activeDealId}/messages/${mid}`), { text: newText.trim() });
+                            admin.ui.toast("Message updated");
+                        } catch(e) { admin.ui.toast("Error editing", "error"); }
+                    }
                 },
 
                 deleteMsg: async (mid) => {
@@ -1120,7 +1246,8 @@
                             <img src="${v.photo}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--info);">
                             <div style="flex:1;">
                                 <div style="font-weight:bold; font-size:16px;">${v.name} <span class="badge" style="background:var(--primary); color:#000;">BOT</span></div>
-                                <div style="font-size:11px; color:var(--text-muted);">Fake Deals: ${v.fake_deals_done || 0} | Wallet: <span style="color:var(--gold);">${v.wallet || 0} ৳</span></div>
+                                <div style="font-size:11px; color:var(--text-muted);">Deals Done: ${v.fake_deals_done || 0} | Pending: ${v.fake_deals_pending || 0}</div>
+                                <div style="font-size:11px; color:var(--gold); font-weight:bold; margin-top:2px;">Wallet: ${v.wallet || 0} ৳</div>
                             </div>
                             <div style="display:flex; flex-direction:column; gap:5px;">
                                 <button class="btn btn-outline" style="padding:5px; font-size:10px; border-color:var(--primary); color:var(--primary);" onclick="admin.posts.filterByBot('${k}', '${v.name}')"><i class="fas fa-gamepad"></i></button>
@@ -1135,6 +1262,7 @@
                     document.getElementById('bot-id-edit').value = '';
                     document.getElementById('bot-name').value = '';
                     document.getElementById('bot-deals').value = '';
+                    document.getElementById('bot-pending-deals').value = '';
                     document.getElementById('bot-pic').value = '';
                     document.getElementById('bot-pic-preview').classList.add('hidden');
                     document.getElementById('bot-pic-icon').classList.remove('hidden');
@@ -1148,6 +1276,7 @@
                     document.getElementById('bot-id-edit').value = botId;
                     document.getElementById('bot-name').value = bot.name;
                     document.getElementById('bot-deals').value = bot.fake_deals_done || 0;
+                    document.getElementById('bot-pending-deals').value = bot.fake_deals_pending || 0;
                     document.getElementById('bot-pic-preview').src = bot.photo;
                     document.getElementById('bot-pic-preview').classList.remove('hidden');
                     document.getElementById('bot-pic-icon').classList.add('hidden');
@@ -1157,7 +1286,8 @@
                 save: async () => {
                     const botIdEdit = document.getElementById('bot-id-edit').value;
                     const name = document.getElementById('bot-name').value.trim();
-                    const deals = document.getElementById('bot-deals').value;
+                    const dealsDone = document.getElementById('bot-deals').value;
+                    const dealsPending = document.getElementById('bot-pending-deals').value;
                     const file = document.getElementById('bot-pic').files[0];
 
                     if(!name) return admin.ui.toast("Name required!", "error");
@@ -1167,7 +1297,8 @@
                     try {
                         let updates = {
                             name: name,
-                            fake_deals_done: Number(deals) || 0
+                            fake_deals_done: Number(dealsDone) || 0,
+                            fake_deals_pending: Number(dealsPending) || 0
                         };
 
                         if(file) {
@@ -1180,7 +1311,6 @@
                         } else {
                             const botId = 'bot_' + Date.now();
                             updates.verified = true;
-                            updates.fake_deals_pending = 1;
                             updates.wallet = 0;
                             await set(ref(db, `virtual_users/${botId}`), updates);
                             admin.ui.toast("Bot Created Successfully!");
@@ -1194,22 +1324,34 @@
                     }
                 },
                 openPostModal: () => {
-                    const select = document.getElementById('mp-bot-id');
-                    select.innerHTML = '';
+                    const selectDisplay = document.getElementById('bot-select-display');
+                    const optionsContainer = document.getElementById('bot-custom-options');
+                    
+                    optionsContainer.innerHTML = '';
                     const bots = Object.entries(window.admin.data.bots);
                     if(bots.length === 0) return admin.ui.toast("Create a Bot first!", "error");
                     
-                    bots.forEach(([k,v]) => { select.innerHTML += `<option value="${k}">${v.name}</option>`; });
+                    // Populate Custom Select
+                    bots.forEach(([k,v]) => { 
+                        optionsContainer.innerHTML += `
+                        <div class="custom-option" onclick="admin.posts.selectBot('${k}', '${v.name.replace(/'/g, "\\'")}', '${v.photo}')">
+                            <img src="${v.photo}"> <span>${v.name}</span>
+                        </div>`; 
+                    });
                     
                     // Reset Form
                     document.getElementById('mp-header-title').innerText = "Post as Virtual Seller";
                     document.getElementById('mp-mode').value = 'create';
                     document.getElementById('mp-bot-select-group').classList.remove('hidden');
                     
+                    document.getElementById('mp-bot-id').value = '';
+                    selectDisplay.innerHTML = '<span>Select a Bot...</span>';
+                    
                     document.getElementById('mp-title').value = '';
                     document.getElementById('mp-price').value = '';
                     document.getElementById('mp-desc').value = '';
                     document.getElementById('mp-video').value = '';
+                    document.getElementById('mp-custom-time').value = '';
                     document.getElementById('mp-thumb').value = '';
                     document.getElementById('mp-thumb-preview').classList.add('hidden');
                     document.getElementById('mp-thumb-icon').classList.remove('hidden');
