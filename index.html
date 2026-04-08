@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ID SHOP BD - ADMIN</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #00ffaa;
+            --secondary: #ff0055;
+            --warning: #ffaa00;
+            --info: #00bfff;
+            --bg: #050505;
+            --surface: #111;
+            --surface-light: #1a1a1a;
+            --text: #fff;
+            --text-muted: #888;
+            --border: #333;
+            --gold: #FFD700;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; font-family: 'Poppins', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 80px; overflow-x: hidden; }
+        ::-webkit-scrollbar { display: none; }
+
+        .hidden { display: none !important; }
+        .rajdhani { font-family: 'Rajdhani', sans-serif; }
+
+        /* HEADER */
+        .header {
+            position: sticky; top: 0; background: rgba(5,5,5,0.9); backdrop-filter: blur(10px);
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border); z-index: 100;
+        }
+        .header-title { font-size: 20px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+        .header-badge { background: rgba(255,0,85,0.1); color: var(--secondary); padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid rgba(255,0,85,0.3); }
+
+        /* NAVBAR */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 65px;
+            background: rgba(10,10,10,0.95); backdrop-filter: blur(15px); border-top: 1px solid var(--border);
+            display: flex; justify-content: space-around; align-items: center; z-index: 1000;
+        }
+        .nav-item { color: var(--text-muted); display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; transition: 0.3s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item.active i { transform: translateY(-3px); }
+
+        /* TABS & CONTAINERS */
+        .tab-content { padding: 20px; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* DASHBOARD GRID */
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+        .dash-card i { font-size: 24px; margin-bottom: 10px; color: var(--info); }
+        .dash-card h3 { font-size: 24px; color: var(--primary); font-family: 'Rajdhani'; }
+        .dash-card p { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+
+        /* LISTS & CARDS */
+        .list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .list-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge.pending { background: rgba(255,170,0,0.1); color: var(--warning); border: 1px solid rgba(255,170,0,0.3); }
+        .badge.approved, .badge.completed { background: rgba(0,255,170,0.1); color: var(--primary); border: 1px solid rgba(0,255,170,0.3); }
+        .badge.rejected, .badge.cancelled { background: rgba(255,0,85,0.1); color: var(--secondary); border: 1px solid rgba(255,0,85,0.3); }
+
+        /* BUTTONS */
+        .btn { background: var(--primary); color: #000; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
+        .btn:active { transform: scale(0.95); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-danger { background: rgba(255,0,85,0.1); color: var(--secondary); border: 1px solid var(--secondary); }
+        .btn-info { background: rgba(0,191,255,0.1); color: var(--info); border: 1px solid var(--info); }
+        
+        .action-row { display: flex; gap: 10px; margin-top: 15px; }
+        .action-row .btn { flex: 1; text-align: center; }
+
+        /* INPUTS */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; }
+        .input-box { width: 100%; background: var(--surface-light); border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 8px; font-size: 13px; }
+        .input-box:focus { border-color: var(--primary); }
+
+        /* OVERLAYS */
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 2000; transform: translateY(100%); transition: 0.3s; display: flex; flex-direction: column; }
+        .overlay.open { transform: translateY(0); }
+        .ov-header { height: 60px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); font-size: 16px; font-weight: 700; gap: 15px; background: var(--surface); }
+        .ov-content { flex: 1; overflow-y: auto; padding: 20px; }
+
+        /* CHAT STYLES */
+        .chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; }
+        .msg-row { display: flex; flex-direction: column; max-width: 80%; }
+        .msg-row.left { align-self: flex-start; }
+        .msg-row.right { align-self: flex-end; align-items: flex-end; }
+        .msg-name { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+        .msg-bubble { background: var(--surface-light); padding: 10px 15px; border-radius: 12px; font-size: 13px; border: 1px solid var(--border); }
+        .msg-row.right .msg-bubble { background: rgba(0,255,170,0.1); border-color: rgba(0,255,170,0.3); color: var(--primary); }
+        .msg-row.admin .msg-bubble { background: rgba(255,215,0,0.1); border-color: var(--gold); color: var(--gold); }
+        
+        .chat-input-area { position: absolute; bottom: 0; width: 100%; background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .chat-dual-actions { display: flex; gap: 10px; }
+
+        /* THUMB UPLOAD */
+        .img-upload-box { width: 100px; height: 100px; border: 2px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; background: var(--surface-light); }
+        .img-upload-box img { width: 100%; height: 100%; object-fit: cover; }
+        .img-upload-box i { font-size: 24px; color: var(--text-muted); position: absolute; }
+
+        /* LOADER & TOAST */
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 5000; border: 1px solid #444; }
+        #toast.show { opacity: 1; bottom: 90px; }
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index: 6000; display:none; justify-content:center; align-items:center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="header-title">ID SHOP <span style="color:#fff">ADMIN</span></div>
+        <div class="header-badge">MASTER</div>
+    </div>
+
+    <!-- MAIN VIEWS -->
+    
+    <!-- DASHBOARD -->
+    <div id="view-dash" class="tab-content">
+        <h3 style="margin-bottom: 15px; font-family:'Rajdhani'; color:var(--text-muted);">SYSTEM OVERVIEW</h3>
+        <div class="dash-grid">
+            <div class="dash-card">
+                <i class="fas fa-users" style="color:var(--info)"></i>
+                <h3 id="stat-users">0</h3><p>Total Users</p>
+            </div>
+            <div class="dash-card">
+                <i class="fas fa-gamepad" style="color:var(--primary)"></i>
+                <h3 id="stat-posts">0</h3><p>Active Posts</p>
+            </div>
+            <div class="dash-card">
+                <i class="fas fa-handshake" style="color:var(--gold)"></i>
+                <h3 id="stat-deals">0</h3><p>Total Deals</p>
+            </div>
+            <div class="dash-card">
+                <i class="fas fa-wallet" style="color:var(--secondary)"></i>
+                <h3 id="stat-wallet">0 ৳</h3><p>User Balances</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- WALLET REQUESTS -->
+    <div id="view-wallet" class="tab-content hidden">
+        <h3 style="margin-bottom: 15px; font-family:'Rajdhani';">Wallet Requests</h3>
+        <div class="dash-grid" style="grid-template-columns: 1fr 1fr;">
+            <button class="btn btn-outline" onclick="admin.wallet.filter('pending')" id="wf-pending">Pending</button>
+            <button class="btn btn-outline" style="border-color:#333; color:#888;" onclick="admin.wallet.filter('all')" id="wf-all">History</button>
+        </div>
+        <div id="wallet-list">Loading...</div>
+    </div>
+
+    <!-- DEALS -->
+    <div id="view-deals" class="tab-content hidden">
+        <h3 style="margin-bottom: 15px; font-family:'Rajdhani';">Manage Deals</h3>
+        <div id="deals-list">Loading...</div>
+    </div>
+
+    <!-- VIRTUAL BOTS -->
+    <div id="view-bots" class="tab-content hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="font-family:'Rajdhani';">Virtual Sellers (Bots)</h3>
+        </div>
+        
+        <div class="dash-grid">
+            <button class="btn" onclick="admin.ui.open('ov-create-bot')"><i class="fas fa-robot"></i> Create Bot</button>
+            <button class="btn btn-info" onclick="admin.bots.openPostModal()"><i class="fas fa-plus"></i> Post as Bot</button>
+        </div>
+
+        <div id="bots-list" style="margin-top: 10px;">Loading...</div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="admin.nav('dash', this)"><i class="fas fa-chart-pie"></i>Dashboard</div>
+        <div class="nav-item" onclick="admin.nav('wallet', this)"><i class="fas fa-money-bill-transfer"></i>Wallet</div>
+        <div class="nav-item" onclick="admin.nav('deals', this)"><i class="fas fa-handshake"></i>Deals</div>
+        <div class="nav-item" onclick="admin.nav('bots', this)"><i class="fas fa-robot"></i>Bots</div>
+    </div>
+
+
+    <!-- OVERLAYS -->
+
+    <!-- DEAL CHAT OVERLAY -->
+    <div id="ov-chat" class="overlay">
+        <div class="ov-header">
+            <i class="fas fa-arrow-left" onclick="admin.ui.close('ov-chat')"></i>
+            <span id="chat-header-title">Deal Chat</span>
+        </div>
+        <div class="chat-box" id="chat-box"></div>
+        
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" class="input-box" placeholder="Type a message...">
+            <div class="chat-dual-actions" id="chat-dual-actions">
+                <!-- Dual buttons generated via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE BOT OVERLAY -->
+    <div id="ov-create-bot" class="overlay">
+        <div class="ov-header">
+            <i class="fas fa-arrow-left" onclick="admin.ui.close('ov-create-bot')"></i>
+            Create Virtual Seller
+        </div>
+        <div class="ov-content">
+            <div class="list-card">
+                <div class="input-group" style="display:flex; flex-direction:column; align-items:center;">
+                    <label>Profile Picture</label>
+                    <div class="img-upload-box" onclick="document.getElementById('bot-pic').click()">
+                        <i class="fas fa-camera" id="bot-pic-icon"></i>
+                        <img id="bot-pic-preview" class="hidden">
+                    </div>
+                    <input type="file" id="bot-pic" class="hidden" accept="image/*" onchange="admin.bots.previewPic(event)">
+                </div>
+
+                <div class="input-group">
+                    <label>Bot Display Name</label>
+                    <input type="text" id="bot-name" class="input-box" placeholder="e.g. Pro Seller BD">
+                </div>
+                <div class="input-group">
+                    <label>Fake Deals Completed (To build trust)</label>
+                    <input type="number" id="bot-deals" class="input-box" placeholder="e.g. 45">
+                </div>
+                
+                <button class="btn" style="width:100%; margin-top:10px;" onclick="admin.bots.save()">CREATE BOT</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE POST AS BOT OVERLAY -->
+    <div id="ov-create-post" class="overlay">
+        <div class="ov-header">
+            <i class="fas fa-arrow-left" onclick="admin.ui.close('ov-create-post')"></i>
+            Post as Virtual Seller
+        </div>
+        <div class="ov-content">
+            <div class="list-card">
+                <div class="input-group">
+                    <label>Select Bot (Seller)</label>
+                    <select id="post-bot-id" class="input-box" style="background:var(--bg);"></select>
+                </div>
+                
+                <div class="input-group">
+                    <label>Post Title</label>
+                    <input type="text" id="bp-title" class="input-box" placeholder="e.g. Level 70 Max ID">
+                </div>
+
+                <div class="dash-grid" style="margin-bottom:0;">
+                    <div class="input-group">
+                        <label>Price (BDT)</label>
+                        <input type="number" id="bp-price" class="input-box" placeholder="Price">
+                    </div>
+                    <div class="input-group">
+                        <label>Game</label>
+                        <select id="bp-game" class="input-box" style="background:var(--bg);">
+                            <option>Free Fire</option>
+                            <option>PUBG Mobile</option>
+                            <option>Clash of Clans</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Cover Image</label>
+                    <input type="file" id="bp-thumb" class="input-box" accept="image/*" style="padding:8px;">
+                </div>
+
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="bp-desc" class="input-box" rows="3"></textarea>
+                </div>
+
+                <button class="btn" style="width:100%; margin-top:10px;" onclick="admin.bots.publishPost()">PUBLISH POST</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPONENTS -->
+    <div id="loader"><div class="spinner"></div><div style="margin-top:10px; color:var(--primary); font-family:'Rajdhani'; font-weight:bold; letter-spacing:1px;" id="loader-text">PROCESSING...</div></div>
+    <div id="toast">Message</div>
+
+
+    <!-- FIREBASE & JS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, update, get, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        // FIREBASE INIT
+        const app = initializeApp({ apiKey: "AIzaSyAOZZrqOoMw6861GvRO27l3zvejnSODn3M", authDomain: "self-click-4f424.firebaseapp.com", databaseURL: "https://self-click-4f424-default-rtdb.firebaseio.com", projectId: "self-click-4f424", storageBucket: "self-click-4f424.appspot.com", messagingSenderId: "94265097208", appId: "1:94265097208:web:91cb74339faa94bb99740d" });
+        const db = getDatabase(app);
+
+        // CLOUDFLARE UPLOAD
+        const CF_WORKER_URL = "https://file-uploader.lizanislamlemon.workers.dev";
+        const CF_PUBLIC_URL = "https://pub-4c6b2dbf3a0c4862a8964b1546de6283.r2.dev";
+
+        async function uploadToCloudflare(file, folderName, customFileName) {
+            return new Promise((resolve, reject) => {
+                const ext = file.name ? file.name.split('.').pop() : 'jpg';
+                const safeName = customFileName ? customFileName : `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', `${CF_WORKER_URL}/upload?filename=${safeName}`);
+                xhr.setRequestHeader('X-Folder', folderName);
+                xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(`${CF_PUBLIC_URL}/${folderName}/${safeName}`);
+                    } else reject("Upload failed");
+                };
+                xhr.onerror = () => reject("Network error");
+                xhr.send(file);
+            });
+        }
+
+        window.admin = {
+            data: { users: {}, posts: {}, deals: {}, wallet_reqs: {}, bots: {} },
+            activeDealId: null,
+            activeBotId: null, // Used for dual chat
+            
+            init: () => {
+                // Real-time Dashboard Stats
+                onValue(ref(db, 'users'), s => { 
+                    window.admin.data.users = s.val() || {}; 
+                    document.getElementById('stat-users').innerText = Object.keys(window.admin.data.users).length;
+                    let totalBal = 0;
+                    Object.values(window.admin.data.users).forEach(u => totalBal += (u.wallet || 0));
+                    document.getElementById('stat-wallet').innerText = totalBal + " ৳";
+                });
+                onValue(ref(db, 'posts'), s => { 
+                    window.admin.data.posts = s.val() || {}; 
+                    document.getElementById('stat-posts').innerText = Object.values(window.admin.data.posts).filter(p=>!p.sold).length;
+                });
+                onValue(ref(db, 'deals'), s => { 
+                    window.admin.data.deals = s.val() || {}; 
+                    document.getElementById('stat-deals').innerText = Object.keys(window.admin.data.deals).length;
+                    admin.deals.render();
+                });
+                onValue(ref(db, 'wallet_requests'), s => {
+                    window.admin.data.wallet_reqs = s.val() || {};
+                    admin.wallet.render();
+                });
+                onValue(ref(db, 'virtual_users'), s => {
+                    window.admin.data.bots = s.val() || {};
+                    admin.bots.render();
+                });
+            },
+
+            nav: (tab, el) => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                el.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+                document.getElementById(`view-${tab}`).classList.remove('hidden');
+            },
+
+            ui: {
+                open: id => document.getElementById(id).classList.add('open'),
+                close: id => document.getElementById(id).classList.remove('open'),
+                loading: (state, text='Processing...') => {
+                    const l = document.getElementById('loader');
+                    document.getElementById('loader-text').innerText = text;
+                    l.style.display = state ? 'flex' : 'none';
+                },
+                toast: (msg, type='success') => {
+                    const t = document.getElementById('toast');
+                    t.innerText = msg; t.style.borderColor = type==='error'? 'var(--secondary)' : 'var(--primary)';
+                    t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000);
+                },
+                getUserName: (uid) => {
+                    if(uid === 'admin') return "ADMIN";
+                    if(uid.startsWith('bot_')) return window.admin.data.bots[uid]?.name || "Bot";
+                    return window.admin.data.users[uid]?.name || "User";
+                }
+            },
+
+            wallet: {
+                filterType: 'pending',
+                filter: (type) => {
+                    admin.wallet.filterType = type;
+                    document.getElementById('wf-pending').style.borderColor = type==='pending' ? 'var(--primary)' : '#333';
+                    document.getElementById('wf-pending').style.color = type==='pending' ? 'var(--primary)' : '#888';
+                    document.getElementById('wf-all').style.borderColor = type==='all' ? 'var(--primary)' : '#333';
+                    document.getElementById('wf-all').style.color = type==='all' ? 'var(--primary)' : '#888';
+                    admin.wallet.render();
+                },
+                render: () => {
+                    const list = Object.entries(window.admin.data.wallet_reqs).reverse();
+                    let html = '';
+                    list.forEach(([k, v]) => {
+                        if(admin.wallet.filterType === 'pending' && v.status !== 'pending') return;
+                        
+                        const uName = admin.ui.getUserName(v.uid);
+                        let typeColor = v.type === 'deposit' ? 'var(--info)' : 'var(--warning)';
+                        let badgeHtml = `<span class="badge ${v.status}">${v.status}</span>`;
+
+                        let actions = '';
+                        if(v.status === 'pending') {
+                            actions = `<div class="action-row">
+                                <button class="btn" onclick="admin.wallet.action('${k}','approve')">Approve</button>
+                                <button class="btn btn-danger" onclick="admin.wallet.action('${k}','reject')">Reject</button>
+                            </div>`;
+                        }
+
+                        html += `
+                        <div class="list-card">
+                            <div class="list-header">
+                                <div>
+                                    <div style="font-weight:bold; color:${typeColor}; text-transform:uppercase;">${v.type} <span style="color:#fff;">• ${v.amount} ৳</span></div>
+                                    <div style="font-size:11px; color:var(--text-muted);">User: ${uName} | TrxID: <span style="color:#fff;">${v.trx_id}</span> | Method: ${v.method}</div>
+                                </div>
+                                ${badgeHtml}
+                            </div>
+                            ${actions}
+                        </div>`;
+                    });
+                    document.getElementById('wallet-list').innerHTML = html || '<p style="color:#888; text-align:center;">No requests found.</p>';
+                },
+                action: async (id, action) => {
+                    if(!confirm(`Are you sure you want to ${action} this request?`)) return;
+                    admin.ui.loading(true);
+                    try {
+                        const req = window.admin.data.wallet_reqs[id];
+                        const user = window.admin.data.users[req.uid];
+                        let currentBal = user.wallet || 0;
+
+                        if (action === 'approve') {
+                            if(req.type === 'deposit') {
+                                await update(ref(db, `users/${req.uid}`), { wallet: currentBal + req.amount });
+                            }
+                            // If withdraw, balance was already deducted during request by user app.
+                            await update(ref(db, `wallet_requests/${id}`), { status: 'approved' });
+                        } else {
+                            if(req.type === 'withdraw') {
+                                // Refund balance if withdraw rejected
+                                await update(ref(db, `users/${req.uid}`), { wallet: currentBal + req.amount });
+                            }
+                            await update(ref(db, `wallet_requests/${id}`), { status: 'rejected' });
+                        }
+                        admin.ui.toast(`Request ${action}d!`);
+                    } catch(e) {
+                        admin.ui.toast("Action failed", "error");
+                    }
+                    admin.ui.loading(false);
+                }
+            },
+
+            deals: {
+                render: () => {
+                    const list = Object.entries(window.admin.data.deals).reverse();
+                    let html = '';
+                    list.forEach(([k, v]) => {
+                        let statusColor = v.status === 'payment_held' ? 'var(--warning)' : (v.status==='completed'?'var(--primary)':'var(--text-muted)');
+                        
+                        // Detect Virtual User involvement
+                        let isBotDeal = v.seller_uid.startsWith('bot_');
+                        let botBadge = isBotDeal ? `<span style="background:rgba(0,191,255,0.2); color:var(--info); font-size:9px; padding:2px 5px; border-radius:3px; margin-left:5px;">BOT DEAL</span>` : '';
+
+                        html += `
+                        <div class="list-card" style="border-left: 3px solid ${statusColor}; cursor:pointer;" onclick="admin.chat.open('${k}')">
+                            <div class="list-header">
+                                <div>
+                                    <div style="font-weight:bold; font-family:'Rajdhani'; font-size:16px;">DEAL-${v.code} ${botBadge}</div>
+                                    <div style="font-size:11px; color:var(--text-muted);">Buyer: ${admin.ui.getUserName(v.buyer_uid)} | Seller: ${admin.ui.getUserName(v.seller_uid)}</div>
+                                </div>
+                                <span class="badge" style="color:${statusColor}">${v.status.replace('_',' ')}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-size:12px; margin-top:5px;">
+                                <span style="color:#aaa;">Price: <span style="color:#fff; font-weight:bold;">${v.price} ৳</span></span>
+                                <span style="color:#aaa;">Fee: <span style="color:var(--gold); font-weight:bold;">${v.admin_fee || 0} ৳</span></span>
+                            </div>
+                        </div>`;
+                    });
+                    document.getElementById('deals-list').innerHTML = html || '<p style="color:#888; text-align:center;">No deals yet.</p>';
+                }
+            },
+
+            chat: {
+                open: (did) => {
+                    window.admin.activeDealId = did;
+                    const deal = window.admin.data.deals[did];
+                    document.getElementById('chat-header-title').innerText = `DEAL-${deal.code}`;
+                    
+                    // Setup Dual Chat Buttons
+                    const actionDiv = document.getElementById('chat-dual-actions');
+                    window.admin.activeBotId = deal.seller_uid.startsWith('bot_') ? deal.seller_uid : null;
+                    
+                    let btnsHtml = `<button class="btn btn-outline" style="flex:1; border-color:var(--gold); color:var(--gold);" onclick="admin.chat.send(true)">Send as Admin</button>`;
+                    
+                    if(window.admin.activeBotId) {
+                        btnsHtml += `<button class="btn btn-info" style="flex:1;" onclick="admin.chat.send(false)">Send as Seller (Bot)</button>`;
+                    }
+                    actionDiv.innerHTML = btnsHtml;
+
+                    // Load Messages
+                    onValue(ref(db, `deals/${did}/messages`), s => {
+                        const b = document.getElementById('chat-box'); b.innerHTML = '';
+                        const msgs = s.val(); if(!msgs) return;
+                        
+                        Object.values(msgs).forEach(m => {
+                            let alignment = m.uid === 'admin' ? 'right' : 'left';
+                            let cssClass = m.uid === 'admin' ? 'admin' : '';
+                            
+                            // If message is sent by the Bot Seller, and I am viewing as Admin, 
+                            // Should I show it on the right? Let's show Admin and Bot on the right to differentiate from Buyer.
+                            if(m.uid === window.admin.activeBotId) {
+                                alignment = 'right';
+                                cssClass = ''; // Regular primary color
+                            }
+
+                            const senderName = admin.ui.getUserName(m.uid);
+                            let contentHtml = m.text;
+                            if (m.type === 'image') contentHtml = `<img src="${m.url}" style="max-width:100%; border-radius:8px;">`;
+                            if (m.type === 'audio') contentHtml = `<audio controls src="${m.url}" style="height:30px;"></audio>`;
+
+                            b.innerHTML += `
+                            <div class="msg-row ${alignment} ${cssClass}">
+                                <span class="msg-name">${senderName}</span>
+                                <div class="msg-bubble">${contentHtml}</div>
+                            </div>`;
+                        });
+                        b.scrollTop = b.scrollHeight;
+                    });
+
+                    admin.ui.open('ov-chat');
+                },
+                send: (asAdmin) => {
+                    const text = document.getElementById('chat-input').value.trim();
+                    if(!text) return;
+                    
+                    const uid = asAdmin ? 'admin' : window.admin.activeBotId;
+                    
+                    push(ref(db, `deals/${window.admin.activeDealId}/messages`), {
+                        text: text, uid: uid, isAdmin: asAdmin, timestamp: serverTimestamp()
+                    });
+                    
+                    document.getElementById('chat-input').value = '';
+                }
+            },
+
+            bots: {
+                render: () => {
+                    const list = Object.entries(window.admin.data.bots).reverse();
+                    let html = '';
+                    list.forEach(([k, v]) => {
+                        html += `
+                        <div class="list-card" style="display:flex; align-items:center; gap:15px;">
+                            <img src="${v.photo}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--info);">
+                            <div style="flex:1;">
+                                <div style="font-weight:bold; font-size:16px;">${v.name} <span class="badge" style="background:var(--primary); color:#000;">BOT</span></div>
+                                <div style="font-size:11px; color:var(--text-muted);">Fake Deals: ${v.fake_deals_done || 0}</div>
+                            </div>
+                        </div>`;
+                    });
+                    document.getElementById('bots-list').innerHTML = html || '<p style="color:#888; text-align:center;">No bots created yet.</p>';
+                },
+                previewPic: (e) => {
+                    const f = e.target.files[0];
+                    if(f) {
+                        document.getElementById('bot-pic-preview').src = URL.createObjectURL(f);
+                        document.getElementById('bot-pic-preview').classList.remove('hidden');
+                        document.getElementById('bot-pic-icon').classList.add('hidden');
+                    }
+                },
+                save: async () => {
+                    const name = document.getElementById('bot-name').value.trim();
+                    const deals = document.getElementById('bot-deals').value;
+                    const file = document.getElementById('bot-pic').files[0];
+
+                    if(!name || !file) return admin.ui.toast("Name and Picture required!", "error");
+
+                    admin.ui.loading(true, "Creating Bot...");
+                    try {
+                        const ext = file.name.split('.').pop();
+                        const photoUrl = await uploadToCloudflare(file, 'pfps', `bot_${Date.now()}.${ext}`);
+                        
+                        const botId = 'bot_' + Date.now();
+                        await set(ref(db, `virtual_users/${botId}`), {
+                            name: name, photo: photoUrl, verified: true, 
+                            fake_deals_done: Number(deals) || 0, fake_deals_pending: 1
+                        });
+
+                        admin.ui.loading(false);
+                        admin.ui.toast("Bot Created Successfully!");
+                        admin.ui.close('ov-create-bot');
+                    } catch(e) {
+                        admin.ui.loading(false);
+                        admin.ui.toast("Error creating bot", "error");
+                    }
+                },
+                openPostModal: () => {
+                    const select = document.getElementById('post-bot-id');
+                    select.innerHTML = '';
+                    const bots = Object.entries(window.admin.data.bots);
+                    if(bots.length === 0) return admin.ui.toast("Create a Bot first!", "error");
+                    
+                    bots.forEach(([k,v]) => { select.innerHTML += `<option value="${k}">${v.name}</option>`; });
+                    admin.ui.open('ov-create-post');
+                },
+                publishPost: async () => {
+                    const botId = document.getElementById('post-bot-id').value;
+                    const title = document.getElementById('bp-title').value.trim();
+                    const price = document.getElementById('bp-price').value;
+                    const game = document.getElementById('bp-game').value;
+                    const desc = document.getElementById('bp-desc').value;
+                    const file = document.getElementById('bp-thumb').files[0];
+
+                    if(!title || !price || !file) return admin.ui.toast("Title, Price & Cover required", "error");
+
+                    admin.ui.loading(true, "Publishing Fake Post...");
+                    try {
+                        const ext = file.name.split('.').pop();
+                        const thumbUrl = await uploadToCloudflare(file, 'posts', `fake_post_${Date.now()}.${ext}`);
+
+                        await push(ref(db, 'posts'), {
+                            title: title, price: Number(price), game: game, category: 'Facebook',
+                            desc: desc, thumbnail: thumbUrl, images: [], 
+                            seller_uid: botId, is_boosted: true, boost_until: Date.now() + (30*24*60*60*1000), // Auto boost fake posts for 30 days
+                            sold: false, timestamp: serverTimestamp()
+                        });
+
+                        admin.ui.loading(false);
+                        admin.ui.toast("Post Published!");
+                        admin.ui.close('ov-create-post');
+                    } catch(e) {
+                        admin.ui.loading(false);
+                        admin.ui.toast("Failed to publish", "error");
+                    }
+                }
+            }
+        };
+
+        window.admin.init();
+    </script>
+</body>
+</html>
