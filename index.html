@@ -111,7 +111,6 @@
         
         .chat-bottom { background: var(--surface); border-top: 1px solid var(--border); display: flex; flex-direction: column; }
         
-        /* Chat Mode Toggle */
         .chat-mode-toggle { display: flex; background: var(--surface-light); padding: 4px; border-radius: 8px; margin: 10px 10px 0 10px; border: 1px solid var(--border); }
         .mode-btn { flex: 1; text-align: center; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: 0.3s; }
         .mode-btn.active#mode-bot { background: rgba(0,191,255,0.2); color: var(--info); border: 1px solid var(--info); }
@@ -130,7 +129,6 @@
         .msg-edit-icon { color: var(--info); }
         .msg-delete-icon:hover, .msg-edit-icon:hover { opacity: 1; }
         
-        /* Positioning icons based on left/right alignment */
         .msg-row.left .msg-delete-icon { right: -30px; }
         .msg-row.left .msg-edit-icon { right: -55px; }
         .msg-row.right .msg-delete-icon { left: -30px; }
@@ -153,6 +151,10 @@
         .img-slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 15px; }
         .slot { position: relative; aspect-ratio: 1; background: var(--surface-light); border: 1px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer;}
         .slot img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* New Slot Remove Icon */
+        .slot-remove { position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.7); color:#fff; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center; font-size:8px; cursor:pointer; }
+        .slot-remove:hover { background:var(--secondary); }
 
         /* LOADER & TOAST */
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 5000; border: 1px solid #444; text-align: center; white-space: nowrap; }
@@ -488,13 +490,17 @@
                     <input type="file" id="mp-thumb" class="hidden" accept="image/*" onchange="admin.utils.previewImage(event, 'mp-thumb-preview', 'mp-thumb-icon')">
                 </div>
 
-                <label style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin-bottom:5px; display:block;">ID Collection (Max 5)</label>
-                <div class="img-slots">
-                    <div class="slot" onclick="document.getElementById('mp-f0').click()"><img id="mp-prev0" class="hidden"><input type="file" id="mp-f0" class="hidden" onchange="admin.utils.previewSlot(event, 0)"></div>
-                    <div class="slot" onclick="document.getElementById('mp-f1').click()"><img id="mp-prev1" class="hidden"><input type="file" id="mp-f1" class="hidden" onchange="admin.utils.previewSlot(event, 1)"></div>
-                    <div class="slot" onclick="document.getElementById('mp-f2').click()"><img id="mp-prev2" class="hidden"><input type="file" id="mp-f2" class="hidden" onchange="admin.utils.previewSlot(event, 2)"></div>
-                    <div class="slot" onclick="document.getElementById('mp-f3').click()"><img id="mp-prev3" class="hidden"><input type="file" id="mp-f3" class="hidden" onchange="admin.utils.previewSlot(event, 3)"></div>
-                    <div class="slot" onclick="document.getElementById('mp-f4').click()"><img id="mp-prev4" class="hidden"><input type="file" id="mp-f4" class="hidden" onchange="admin.utils.previewSlot(event, 4)"></div>
+                <!-- BATCH GALLERY UPLOAD UI -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                    <label style="font-size:11px; color:var(--text-muted); text-transform:uppercase; margin:0;">ID Collection (Max 5)</label>
+                    <div style="font-size:10px; background:rgba(0,255,170,0.1); color:var(--primary); padding:4px 8px; border-radius:4px; cursor:pointer; font-weight:bold; border:1px solid rgba(0,255,170,0.3);" onclick="document.getElementById('mp-gallery-upload').click()">
+                        <i class="fas fa-images"></i> BATCH UPLOAD
+                    </div>
+                </div>
+                <input type="file" id="mp-gallery-upload" multiple accept="image/*" class="hidden" onchange="admin.utils.handleGallerySelect(event)">
+                
+                <div class="img-slots" id="mp-gallery-slots">
+                    <!-- JS will render slots here automatically -->
                 </div>
 
                 <button class="btn" style="width:100%; margin-top:20px; font-size:16px;" onclick="admin.posts.save()">SAVE POST</button>
@@ -556,10 +562,10 @@
             data: { users: {}, posts: {}, deals: {}, wallet_reqs: {}, bots: {} },
             activeDealId: null,
             activeBotId: null,
-            chatMode: 'admin', // default state
+            chatMode: 'admin', 
+            currentGallery: [], // Stores current post gallery images (files or urls)
             
             init: () => {
-                // Real-time Data Listeners
                 onValue(ref(db, 'users'), s => { 
                     window.admin.data.users = s.val() || {}; 
                     document.getElementById('stat-users').innerText = Object.keys(window.admin.data.users).length;
@@ -647,13 +653,53 @@
                         if(iconId) document.getElementById(iconId).classList.add('hidden');
                     }
                 },
-                previewSlot: (e, idx) => {
-                    const f = e.target.files[0];
-                    if(f) {
-                        const img = document.getElementById(`mp-prev${idx}`);
-                        img.src = URL.createObjectURL(f);
-                        img.classList.remove('hidden');
+                // GALLERY BATCH LOGIC
+                handleGallerySelect: (e) => {
+                    const files = Array.from(e.target.files);
+                    if(!files.length) return;
+                    
+                    let availableSlots = 5 - admin.currentGallery.length;
+                    if(files.length > availableSlots) {
+                        admin.ui.toast(`Only ${availableSlots} more image(s) allowed. Rest were ignored.`, "warning");
                     }
+                    
+                    let filesToAdd = files.slice(0, availableSlots);
+                    filesToAdd.forEach(f => {
+                        admin.currentGallery.push({
+                            type: 'file',
+                            file: f,
+                            preview: URL.createObjectURL(f)
+                        });
+                    });
+                    
+                    admin.utils.renderGallery();
+                    e.target.value = ''; // Reset input to allow re-selecting same files if needed
+                },
+                removeGalleryItem: (idx, e) => {
+                    e.stopPropagation();
+                    admin.currentGallery.splice(idx, 1);
+                    admin.utils.renderGallery();
+                },
+                renderGallery: () => {
+                    const container = document.getElementById('mp-gallery-slots');
+                    let html = '';
+                    for(let i=0; i<5; i++) {
+                        let item = admin.currentGallery[i];
+                        if(item) {
+                            let src = item.type === 'file' ? item.preview : item.url;
+                            html += `
+                            <div class="slot">
+                                <img src="${src}">
+                                <div class="slot-remove" onclick="admin.utils.removeGalleryItem(${i}, event)"><i class="fas fa-times"></i></div>
+                            </div>`;
+                        } else {
+                            html += `
+                            <div class="slot" onclick="document.getElementById('mp-gallery-upload').click()">
+                                <i class="fas fa-plus" style="color:var(--text-muted);"></i>
+                            </div>`;
+                        }
+                    }
+                    container.innerHTML = html;
                 }
             },
 
@@ -742,7 +788,7 @@
                         document.getElementById('mp-boost-days').value = 30; // Default
                     }
 
-                    // Load existing images
+                    // Load Thumbnail
                     if(p.thumbnail) {
                         document.getElementById('mp-thumb-preview').src = p.thumbnail;
                         document.getElementById('mp-thumb-preview').classList.remove('hidden');
@@ -753,15 +799,14 @@
                         document.getElementById('mp-thumb-icon').classList.remove('hidden');
                     }
 
-                    for(let i=0; i<5; i++) {
-                        const img = document.getElementById(`mp-prev${i}`);
-                        if(p.images && p.images[i]) {
-                            img.src = p.images[i]; img.classList.remove('hidden');
-                        } else {
-                            img.src = ''; img.classList.add('hidden');
-                        }
-                        document.getElementById(`mp-f${i}`).value = ''; // Reset file input
+                    // Load Gallery Array
+                    admin.currentGallery = [];
+                    if (p.images && p.images.length > 0) {
+                        p.images.forEach(imgUrl => {
+                            if(imgUrl) admin.currentGallery.push({ type: 'url', url: imgUrl });
+                        });
                     }
+                    admin.utils.renderGallery();
 
                     admin.ui.open('ov-manage-post');
                 },
@@ -812,16 +857,15 @@
                             return admin.ui.toast("Cover Image is required for new post!", "error");
                         }
 
-                        // Get existing images or upload new
+                        // Process Batch Gallery
                         let finalImages = [];
-                        for(let i=0; i<5; i++) {
-                            const f = document.getElementById(`mp-f${i}`).files[0];
-                            const existingSrc = document.getElementById(`mp-prev${i}`).src;
-                            
-                            if(f) {
-                                finalImages.push(await uploadToCloudflare(f, 'posts'));
-                            } else if (existingSrc && !existingSrc.startsWith('blob:') && !existingSrc.endsWith('/')) {
-                                finalImages.push(existingSrc);
+                        for(let i=0; i<admin.currentGallery.length; i++) {
+                            let item = admin.currentGallery[i];
+                            if(item.type === 'url') {
+                                finalImages.push(item.url);
+                            } else if(item.type === 'file') {
+                                const upUrl = await uploadToCloudflare(item.file, 'posts');
+                                finalImages.push(upUrl);
                             }
                         }
                         updates.images = finalImages;
@@ -1359,10 +1403,8 @@
                     document.getElementById('mp-boost-days-div').style.display = 'block';
                     document.getElementById('mp-boost-days').value = 30;
                     
-                    for(let i=0; i<5; i++) {
-                        document.getElementById(`mp-f${i}`).value = '';
-                        document.getElementById(`mp-prev${i}`).classList.add('hidden');
-                    }
+                    admin.currentGallery = [];
+                    admin.utils.renderGallery();
 
                     admin.ui.open('ov-manage-post');
                 }
