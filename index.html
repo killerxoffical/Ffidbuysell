@@ -94,7 +94,17 @@
         .ov-content { flex: 1; overflow-y: auto; padding: 20px; }
 
         /* CHAT STYLES */
-        .chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 80px; }
+        .chat-wrapper { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+        .chat-box { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .chat-bottom { background: var(--surface); border-top: 1px solid var(--border); display: flex; flex-direction: column; }
+        
+        /* Chat Mode Toggle */
+        .chat-mode-toggle { display: flex; background: var(--surface-light); padding: 4px; border-radius: 8px; margin: 10px 10px 0 10px; border: 1px solid var(--border); }
+        .mode-btn { flex: 1; text-align: center; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: 0.3s; }
+        .mode-btn.active#mode-bot { background: rgba(0,191,255,0.2); color: var(--info); border: 1px solid var(--info); }
+        .mode-btn.active#mode-admin { background: rgba(255,215,0,0.2); color: var(--gold); border: 1px solid var(--gold); }
+
         .msg-row { display: flex; flex-direction: column; max-width: 85%; position: relative; }
         .msg-row.left { align-self: flex-start; }
         .msg-row.right { align-self: flex-end; align-items: flex-end; }
@@ -108,8 +118,15 @@
         .msg-row.left .msg-delete-icon { right: -30px; }
         .msg-row.right .msg-delete-icon { left: -30px; }
 
-        .chat-input-area { position: absolute; bottom: 0; width: 100%; background: var(--surface); padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+        .chat-input-area { padding: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;}
+        .chat-tools { display: flex; gap: 8px; }
+        .chat-tool-btn { background: var(--surface-light); border: 1px solid var(--border); color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .chat-tool-btn:active { transform: scale(0.9); }
+        .chat-tool-btn.recording { background: rgba(255,0,85,0.2); color: var(--secondary); border-color: var(--secondary); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         
+        .rec-timer { font-family: 'Rajdhani'; color: var(--secondary); font-size: 14px; font-weight: bold; margin-left: 10px; display: none; }
+
         /* THUMB UPLOAD */
         .img-upload-box { width: 100px; height: 100px; border: 2px dashed var(--border); border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; background: var(--surface-light); }
         .img-upload-box img { width: 100%; height: 100%; object-fit: cover; }
@@ -120,7 +137,7 @@
         .slot img { width: 100%; height: 100%; object-fit: cover; }
 
         /* LOADER & TOAST */
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 5000; border: 1px solid #444; }
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 30px; font-size: 12px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 5000; border: 1px solid #444; text-align: center; white-space: nowrap; }
         #toast.show { opacity: 1; bottom: 90px; }
         #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 6000; display:none; justify-content:center; align-items:center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -171,11 +188,17 @@
     <!-- POSTS MANAGEMENT -->
     <div id="view-posts" class="tab-content hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h3 style="font-family:'Rajdhani';">All Posts</h3>
+            <h3 style="font-family:'Rajdhani';" id="posts-page-title">All Posts</h3>
             <button class="btn btn-info" onclick="admin.nav('bots', document.querySelector('.nav-item:nth-child(5)'))">+ Add Post</button>
         </div>
         <div class="input-group">
-            <input type="text" id="post-search" class="input-box" placeholder="Search Posts..." oninput="admin.posts.render()">
+            <input type="text" id="post-search" class="input-box" placeholder="Search Posts by Title..." oninput="admin.posts.render()">
+        </div>
+        <!-- Hidden input for bot filter -->
+        <input type="hidden" id="post-bot-filter" value="">
+        <div id="posts-filter-badge" class="hidden" style="margin-bottom:15px; background:rgba(0,191,255,0.1); padding:8px; border-radius:6px; border:1px solid var(--info); display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12px; color:var(--info);" id="posts-filter-text">Showing posts for Bot X</span>
+            <i class="fas fa-times" style="color:var(--secondary); cursor:pointer;" onclick="admin.posts.clearFilter()"></i>
         </div>
         <div id="posts-list">Loading...</div>
     </div>
@@ -203,7 +226,7 @@
         </div>
         
         <div class="dash-grid">
-            <button class="btn" onclick="admin.ui.open('ov-create-bot')"><i class="fas fa-robot"></i> Create Bot</button>
+            <button class="btn" onclick="admin.bots.openCreateModal()"><i class="fas fa-robot"></i> Create Bot</button>
             <button class="btn btn-info" onclick="admin.bots.openPostModal()"><i class="fas fa-plus"></i> Post as Bot</button>
         </div>
 
@@ -229,27 +252,77 @@
                 <i class="fas fa-arrow-left" onclick="admin.ui.close('ov-chat')"></i>
                 <span id="chat-header-title">Deal Chat</span>
             </div>
-            <!-- DUAL CHAT: ADMIN BUTTON IN HEADER TO PREVENT MISTAKES -->
-            <button class="btn btn-gold" style="padding:5px 10px; font-size:10px;" onclick="admin.chat.promptAdminMessage()">🛡️ ADMIN MSG</button>
+            <div style="display:flex; gap:10px;">
+                <!-- DEAL ACTIONS GEAR ICON -->
+                <button class="btn btn-outline" style="padding:5px 10px; border-color:var(--text-muted); color:var(--text-muted);" onclick="admin.deals.openSettings()"><i class="fas fa-cog"></i></button>
+            </div>
         </div>
-        <div class="chat-box" id="chat-box"></div>
         
-        <div class="chat-input-area">
-            <input type="text" id="chat-input" class="input-box" style="flex:1; margin:0;" placeholder="Type a message...">
-            <button class="btn" style="padding:12px;" onclick="admin.chat.promptNormalMessage()"><i class="fas fa-paper-plane"></i></button>
+        <div class="chat-wrapper">
+            <div class="chat-box" id="chat-box"></div>
+            
+            <div class="chat-bottom">
+                <!-- Chat Sender Mode Toggle -->
+                <div class="chat-mode-toggle" id="chat-mode-toggle">
+                    <div class="mode-btn" id="mode-bot" onclick="admin.chat.setMode('bot')"><i class="fas fa-robot"></i> As Bot</div>
+                    <div class="mode-btn active" id="mode-admin" onclick="admin.chat.setMode('admin')"><i class="fas fa-shield-alt"></i> As Admin</div>
+                </div>
+
+                <div class="chat-input-area" id="chat-input-area">
+                    <div class="chat-tools">
+                        <div class="chat-tool-btn" onclick="document.getElementById('chat-img-upload').click()">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <input type="file" id="chat-img-upload" accept="image/*" class="hidden" onchange="admin.chat.sendImage(event)">
+                        
+                        <div class="chat-tool-btn" id="chat-mic-btn" onclick="admin.chat.toggleVoice()">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                    </div>
+                    <div class="rec-timer" id="rec-timer">00:00</div>
+                    <input type="text" id="chat-input" class="input-box" style="flex:1; margin:0;" placeholder="Type a message...">
+                    <button class="btn" id="chat-send-btn" style="padding:12px;" onclick="admin.chat.sendText()"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- CREATE BOT OVERLAY -->
+    <!-- DEAL SETTINGS MODAL -->
+    <div id="ov-deal-settings" class="overlay" style="background: rgba(0,0,0,0.8); align-items:flex-end; justify-content:flex-end;">
+        <div style="background:var(--surface); width:100%; border-radius:20px 20px 0 0; padding:20px; border-top:1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h3 style="font-family:'Rajdhani'; color:var(--primary);">Deal Settings</h3>
+                <i class="fas fa-times" style="font-size:20px; cursor:pointer;" onclick="admin.ui.close('ov-deal-settings')"></i>
+            </div>
+            
+            <div class="input-group">
+                <label>Change Deal Price (BDT)</label>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">Current Price: <span id="ds-current-price-val" style="color:var(--gold); font-weight:bold; font-size:14px;">0 ৳</span></p>
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="ds-new-price" class="input-box" placeholder="New Total Price">
+                    <button class="btn" onclick="admin.deals.changePrice()">UPDATE</button>
+                </div>
+                <p style="font-size:10px; color:var(--warning); margin-top:5px;">If price decreases, the difference is automatically refunded to the buyer.</p>
+            </div>
+            
+            <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+            
+            <button class="btn btn-danger" style="width:100%;" onclick="admin.deals.cancelDeal()">❌ CANCEL THIS DEAL</button>
+            <p style="font-size:10px; color:var(--text-muted); text-align:center; margin-top:5px;">Buyer will receive a full refund instantly.</p>
+        </div>
+    </div>
+
+    <!-- CREATE / EDIT BOT OVERLAY -->
     <div id="ov-create-bot" class="overlay">
         <div class="ov-header">
             <div style="display:flex; align-items:center; gap:10px;">
                 <i class="fas fa-arrow-left" onclick="admin.ui.close('ov-create-bot')"></i>
-                Create Virtual Seller
+                <span id="bot-header-title">Create Virtual Seller</span>
             </div>
         </div>
         <div class="ov-content">
             <div class="list-card">
+                <input type="hidden" id="bot-id-edit">
                 <div class="input-group" style="display:flex; flex-direction:column; align-items:center;">
                     <label>Profile Picture</label>
                     <div class="img-upload-box" onclick="document.getElementById('bot-pic').click()">
@@ -268,7 +341,7 @@
                     <input type="number" id="bot-deals" class="input-box" placeholder="e.g. 45">
                 </div>
                 
-                <button class="btn" style="width:100%; margin-top:10px;" onclick="admin.bots.save()">CREATE BOT</button>
+                <button class="btn" style="width:100%; margin-top:10px;" id="bot-save-btn" onclick="admin.bots.save()">CREATE BOT</button>
             </div>
         </div>
     </div>
@@ -344,9 +417,14 @@
                     <input type="text" id="mp-video" class="input-box" placeholder="YouTube or Drive Link">
                 </div>
 
-                <div class="input-group" style="display:flex; align-items:center; gap:10px; background:var(--surface-light); padding:10px; border-radius:8px; border:1px solid var(--border);">
-                    <input type="checkbox" id="mp-boost" style="width:20px; height:20px;">
-                    <label style="margin:0; font-size:14px; color:var(--gold); font-weight:bold;">Boost Post (Golden Glow)</label>
+                <div class="input-group" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-light); padding:10px; border-radius:8px; border:1px solid var(--border);">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" id="mp-boost" style="width:20px; height:20px;" onchange="document.getElementById('mp-boost-days-div').style.display = this.checked ? 'block' : 'none'">
+                        <label style="margin:0; font-size:14px; color:var(--gold); font-weight:bold;">Boost Post</label>
+                    </div>
+                    <div id="mp-boost-days-div" style="display:none; width:80px;">
+                        <input type="number" id="mp-boost-days" class="input-box" style="padding:6px; font-size:12px; text-align:center;" placeholder="Days" value="30">
+                    </div>
                 </div>
 
                 <!-- IMAGES -->
@@ -414,7 +492,8 @@
         window.admin = {
             data: { users: {}, posts: {}, deals: {}, wallet_reqs: {}, bots: {} },
             activeDealId: null,
-            activeBotId: null, 
+            activeBotId: null,
+            chatMode: 'admin', // default state
             
             init: () => {
                 // Real-time Data Listeners
@@ -454,6 +533,8 @@
                 el.classList.add('active');
                 document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
                 document.getElementById(`view-${tab}`).classList.remove('hidden');
+                
+                if(tab === 'posts') admin.posts.clearFilter(false);
             },
 
             ui: {
@@ -496,17 +577,33 @@
             },
 
             posts: {
+                filterByBot: (botId, botName) => {
+                    document.getElementById('post-bot-filter').value = botId;
+                    document.getElementById('posts-filter-badge').classList.remove('hidden');
+                    document.getElementById('posts-filter-text').innerText = `Showing posts for: ${botName}`;
+                    admin.nav('posts', document.querySelector('.nav-item:nth-child(2)'));
+                    admin.posts.render();
+                },
+                clearFilter: (render = true) => {
+                    document.getElementById('post-bot-filter').value = '';
+                    document.getElementById('posts-filter-badge').classList.add('hidden');
+                    if(render) admin.posts.render();
+                },
                 render: () => {
                     const search = document.getElementById('post-search').value.toLowerCase();
+                    const botFilter = document.getElementById('post-bot-filter').value;
                     const list = Object.entries(window.admin.data.posts).reverse();
                     let html = '';
                     list.forEach(([k, p]) => {
                         if(search && !p.title.toLowerCase().includes(search)) return;
+                        if(botFilter && p.seller_uid !== botFilter) return;
                         
                         const sName = admin.ui.getUserName(p.seller_uid);
                         const isBot = p.seller_uid.startsWith('bot_');
                         const botBadge = isBot ? `<span class="badge" style="background:var(--primary); color:#000;">BOT POST</span>` : '';
                         const thumb = p.thumbnail || (p.images ? p.images[0] : 'https://via.placeholder.com/60');
+                        
+                        let boostBadge = (p.is_boosted && p.boost_until > Date.now()) ? `<span style="color:var(--gold); font-size:10px;"><i class="fas fa-bolt"></i> Boosted</span>` : '';
 
                         html += `
                         <div class="list-card" style="display:flex; gap:10px; align-items:center;">
@@ -514,7 +611,7 @@
                             <div style="flex:1;">
                                 <div style="font-weight:bold; font-size:14px;">${p.title}</div>
                                 <div style="font-size:11px; color:var(--text-muted);">Seller: ${sName} ${botBadge}</div>
-                                <div style="font-size:13px; color:var(--gold); font-weight:bold;">${p.price} ৳</div>
+                                <div style="font-size:13px; color:var(--gold); font-weight:bold; margin-top:2px;">${p.price} ৳ ${boostBadge}</div>
                             </div>
                             <div style="display:flex; flex-direction:column; gap:5px;">
                                 <button class="btn btn-info" style="padding:6px; font-size:10px;" onclick="admin.posts.openEdit('${k}')"><i class="fas fa-edit"></i></button>
@@ -541,7 +638,7 @@
                     document.getElementById('mp-mode').value = 'edit';
                     document.getElementById('mp-pid').value = pid;
                     
-                    document.getElementById('mp-bot-select-group').classList.add('hidden'); // Hide bot selector on edit
+                    document.getElementById('mp-bot-select-group').classList.add('hidden');
                     
                     document.getElementById('mp-title').value = p.title || '';
                     document.getElementById('mp-price').value = p.price || '';
@@ -551,7 +648,15 @@
                     document.getElementById('mp-desc').value = p.desc || '';
                     document.getElementById('mp-video').value = p.video_url || '';
                     
-                    document.getElementById('mp-boost').checked = !!(p.is_boosted && p.boost_until > Date.now());
+                    const isBoosted = !!(p.is_boosted && p.boost_until > Date.now());
+                    document.getElementById('mp-boost').checked = isBoosted;
+                    document.getElementById('mp-boost-days-div').style.display = isBoosted ? 'block' : 'none';
+                    if(isBoosted) {
+                        const daysLeft = Math.max(1, Math.ceil((p.boost_until - Date.now()) / (24*60*60*1000)));
+                        document.getElementById('mp-boost-days').value = daysLeft;
+                    } else {
+                        document.getElementById('mp-boost-days').value = 30; // Default
+                    }
 
                     // Load existing images
                     if(p.thumbnail) {
@@ -587,7 +692,9 @@
                     const server = document.getElementById('mp-server').value;
                     const desc = document.getElementById('mp-desc').value;
                     const video = document.getElementById('mp-video').value;
+                    
                     const isBoosted = document.getElementById('mp-boost').checked;
+                    const boostDays = Number(document.getElementById('mp-boost-days').value) || 30;
 
                     if(!title || !price) return admin.ui.toast("Title and Price required", "error");
 
@@ -598,10 +705,9 @@
                             title, price: Number(price), game, category: cat, server, desc, video_url: video
                         };
 
-                        if(isBoosted) {
+                        if(isBoosted && boostDays > 0) {
                             updates.is_boosted = true;
-                            // Add 30 days boost from now
-                            updates.boost_until = Date.now() + (30*24*60*60*1000);
+                            updates.boost_until = Date.now() + (boostDays * 24 * 60 * 60 * 1000);
                         } else {
                             updates.is_boosted = false;
                             updates.boost_until = 0;
@@ -786,16 +892,100 @@
                         admin.ui.toast("Error completing deal", "error");
                     }
                     admin.ui.loading(false);
+                },
+                openSettings: () => {
+                    const d = window.admin.data.deals[window.admin.activeDealId];
+                    document.getElementById('ds-current-price-val').innerText = d.price + " ৳";
+                    document.getElementById('ds-new-price').value = '';
+                    admin.ui.open('ov-deal-settings');
+                },
+                changePrice: async () => {
+                    const newTotal = Number(document.getElementById('ds-new-price').value);
+                    const d = window.admin.data.deals[window.admin.activeDealId];
+                    if(!newTotal || newTotal <= 0) return admin.ui.toast("Invalid Price", "error");
+                    
+                    if(newTotal >= d.price) return admin.ui.toast("New price must be lower than current.", "warning");
+
+                    admin.ui.loading(true, "Updating Price...");
+                    try {
+                        const refund = d.price - newTotal;
+                        
+                        // Refund difference to buyer
+                        const buyer = window.admin.data.users[d.buyer_uid];
+                        await update(ref(db, `users/${d.buyer_uid}`), { wallet: (buyer.wallet || 0) + refund });
+                        
+                        await update(ref(db, `deals/${window.admin.activeDealId}`), { price: newTotal });
+                        
+                        push(ref(db, `deals/${window.admin.activeDealId}/messages`), { 
+                            text: `🛑 PRICE UPDATED.\nOld Price: ${d.price} ৳\nNew Price: ${newTotal} ৳\nRefund to Buyer: ${refund} ৳`, 
+                            uid: 'admin', isAdmin: true, timestamp: serverTimestamp() 
+                        });
+
+                        admin.ui.toast("Price Updated!", "success");
+                        admin.ui.close('ov-deal-settings');
+                    } catch(e) {
+                        admin.ui.toast("Error updating price", "error");
+                    }
+                    admin.ui.loading(false);
+                },
+                cancelDeal: async () => {
+                    if(!confirm("Cancel this deal and refund buyer?")) return;
+                    admin.ui.loading(true, "Cancelling...");
+                    try {
+                        const d = window.admin.data.deals[window.admin.activeDealId];
+                        if(d.status === 'completed' || d.status === 'cancelled') {
+                            admin.ui.loading(false); return admin.ui.toast("Deal is already closed", "error");
+                        }
+
+                        // Full refund to buyer
+                        const buyer = window.admin.data.users[d.buyer_uid];
+                        await update(ref(db, `users/${d.buyer_uid}`), { wallet: (buyer.wallet || 0) + d.price });
+                        
+                        await update(ref(db, `deals/${window.admin.activeDealId}`), { status: 'cancelled' });
+                        
+                        push(ref(db, `deals/${window.admin.activeDealId}/messages`), { 
+                            text: `🚫 DEAL CANCELLED BY ADMIN.\nBuyer has been fully refunded.`, 
+                            uid: 'admin', isAdmin: true, timestamp: serverTimestamp() 
+                        });
+
+                        admin.ui.toast("Deal Cancelled & Refunded!", "success");
+                        admin.ui.close('ov-deal-settings');
+                    } catch(e) {
+                        admin.ui.toast("Error cancelling deal", "error");
+                    }
+                    admin.ui.loading(false);
                 }
             },
 
             chat: {
+                mediaRecorder: null,
+                audioChunks: [],
+                isRecording: false,
+                recordTimer: null,
+                startTime: 0,
+
+                setMode: (mode) => {
+                    admin.chatMode = mode;
+                    document.getElementById('mode-bot').classList.remove('active');
+                    document.getElementById('mode-admin').classList.remove('active');
+                    document.getElementById(`mode-${mode}`).classList.add('active');
+                },
+
                 open: (did) => {
                     window.admin.activeDealId = did;
                     const deal = window.admin.data.deals[did];
                     document.getElementById('chat-header-title').innerText = `DEAL-${deal.code}`;
                     
                     window.admin.activeBotId = deal.seller_uid.startsWith('bot_') ? deal.seller_uid : null;
+
+                    // Setup Toggle buttons
+                    if(window.admin.activeBotId) {
+                        document.getElementById('mode-bot').style.display = 'block';
+                        admin.chat.setMode('bot'); // Default to Bot if bot is present
+                    } else {
+                        document.getElementById('mode-bot').style.display = 'none';
+                        admin.chat.setMode('admin'); // Force admin
+                    }
 
                     // Load Messages
                     onValue(ref(db, `deals/${did}/messages`), s => {
@@ -806,7 +996,7 @@
                             let alignment = m.uid === 'admin' ? 'right' : 'left';
                             let cssClass = m.uid === 'admin' ? 'admin' : '';
                             
-                            // If message is sent by the Bot Seller, show it on the right to differentiate
+                            // If message is sent by the Bot Seller, show it on the right
                             if(m.uid === window.admin.activeBotId) {
                                 alignment = 'right';
                                 cssClass = ''; 
@@ -833,34 +1023,17 @@
                     admin.ui.open('ov-chat');
                 },
 
-                // This is the normal input box button (Sends as BOT or USER)
-                promptNormalMessage: () => {
+                sendText: () => {
                     const text = document.getElementById('chat-input').value.trim();
                     if(!text) return;
-
-                    let senderName = window.admin.activeBotId ? window.admin.data.bots[window.admin.activeBotId].name : "Normal User";
-                    let uid = window.admin.activeBotId ? window.admin.activeBotId : 'admin'; // Fallback if admin accidentally uses normal box in non-bot deal
-
-                    if(window.admin.activeBotId) {
-                        if(!confirm(`Send message as SELLER: [${senderName}]?`)) return;
-                    }
-
+                    
+                    const uid = admin.chatMode === 'bot' ? window.admin.activeBotId : 'admin';
+                    
                     push(ref(db, `deals/${window.admin.activeDealId}/messages`), {
-                        text: text, uid: uid, isAdmin: !window.admin.activeBotId, timestamp: serverTimestamp()
+                        text: text, uid: uid, isAdmin: (uid==='admin'), timestamp: serverTimestamp()
                     });
                     
                     document.getElementById('chat-input').value = '';
-                },
-
-                // This is the Top Header Button (Strictly Sends as ADMIN)
-                promptAdminMessage: () => {
-                    const msg = prompt("Enter Official Admin Message:");
-                    if(msg && msg.trim()) {
-                        if(!confirm("Send as ADMIN? (Golden Message)")) return;
-                        push(ref(db, `deals/${window.admin.activeDealId}/messages`), {
-                            text: msg.trim(), uid: 'admin', isAdmin: true, timestamp: serverTimestamp()
-                        });
-                    }
                 },
 
                 deleteMsg: async (mid) => {
@@ -868,6 +1041,72 @@
                     try {
                         await remove(ref(db, `deals/${window.admin.activeDealId}/messages/${mid}`));
                     } catch(e) { admin.ui.toast("Delete failed", "error"); }
+                },
+
+                sendImage: async (e) => {
+                    const f = e.target.files[0];
+                    if(!f) return;
+                    const uid = admin.chatMode === 'bot' ? window.admin.activeBotId : 'admin';
+                    
+                    admin.ui.loading(true, "Sending Image...");
+                    try {
+                        const url = await uploadToCloudflare(f, 'chat_images');
+                        await push(ref(db, `deals/${window.admin.activeDealId}/messages`), {
+                            type: 'image', url: url, uid: uid, isAdmin: (uid==='admin'), timestamp: serverTimestamp()
+                        });
+                    } catch(err) { admin.ui.toast("Image upload failed", "error"); }
+                    admin.ui.loading(false);
+                    e.target.value = '';
+                },
+
+                toggleVoice: async () => {
+                    const btn = document.getElementById('chat-mic-btn');
+                    if(admin.chat.isRecording) {
+                        // STOP & SEND
+                        btn.classList.remove('recording');
+                        document.getElementById('rec-timer').style.display = 'none';
+                        clearInterval(admin.chat.recordTimer);
+                        admin.chat.isRecording = false;
+                        admin.chat.mediaRecorder.stop();
+                    } else {
+                        // START
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            admin.chat.mediaRecorder = new MediaRecorder(stream);
+                            admin.chat.audioChunks = [];
+                            admin.chat.mediaRecorder.ondataavailable = e => admin.chat.audioChunks.push(e.data);
+                            
+                            admin.chat.mediaRecorder.onstop = async () => {
+                                const audioBlob = new Blob(admin.chat.audioChunks, { type: 'audio/webm' });
+                                const uid = admin.chatMode === 'bot' ? window.admin.activeBotId : 'admin';
+                                
+                                admin.ui.loading(true, "Sending Audio...");
+                                try {
+                                    const url = await uploadToCloudflare(audioBlob, 'chat_audio', `${Date.now()}_admin.webm`);
+                                    await push(ref(db, `deals/${window.admin.activeDealId}/messages`), { 
+                                        type: 'audio', url: url, uid: uid, isAdmin: (uid==='admin'), timestamp: serverTimestamp() 
+                                    });
+                                } catch(e) { admin.ui.toast("Voice send failed", "error"); }
+                                admin.ui.loading(false);
+                                stream.getTracks().forEach(t => t.stop());
+                            };
+
+                            admin.chat.mediaRecorder.start();
+                            admin.chat.isRecording = true;
+                            btn.classList.add('recording');
+                            
+                            document.getElementById('rec-timer').style.display = 'block';
+                            admin.chat.startTime = Date.now();
+                            admin.chat.recordTimer = setInterval(() => {
+                                const diff = Math.floor((Date.now() - admin.chat.startTime) / 1000);
+                                const secs = diff < 10 ? `0${diff}` : diff;
+                                document.getElementById('rec-timer').innerText = `00:${secs}`;
+                                if(diff >= 15) admin.chat.toggleVoice(); // Auto stop at 15s
+                            }, 1000);
+                        } catch (err) {
+                            admin.ui.toast("Mic permission denied", "error");
+                        }
+                    }
                 }
             },
 
@@ -883,32 +1122,75 @@
                                 <div style="font-weight:bold; font-size:16px;">${v.name} <span class="badge" style="background:var(--primary); color:#000;">BOT</span></div>
                                 <div style="font-size:11px; color:var(--text-muted);">Fake Deals: ${v.fake_deals_done || 0} | Wallet: <span style="color:var(--gold);">${v.wallet || 0} ৳</span></div>
                             </div>
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <button class="btn btn-outline" style="padding:5px; font-size:10px; border-color:var(--primary); color:var(--primary);" onclick="admin.posts.filterByBot('${k}', '${v.name}')"><i class="fas fa-gamepad"></i></button>
+                                <button class="btn btn-info" style="padding:5px; font-size:10px;" onclick="admin.bots.openEditModal('${k}')"><i class="fas fa-pen"></i></button>
+                            </div>
                         </div>`;
                     });
                     document.getElementById('bots-list').innerHTML = html || '<p style="color:#888; text-align:center;">No bots created yet.</p>';
                 },
+                openCreateModal: () => {
+                    document.getElementById('bot-header-title').innerText = "Create Virtual Seller";
+                    document.getElementById('bot-id-edit').value = '';
+                    document.getElementById('bot-name').value = '';
+                    document.getElementById('bot-deals').value = '';
+                    document.getElementById('bot-pic').value = '';
+                    document.getElementById('bot-pic-preview').classList.add('hidden');
+                    document.getElementById('bot-pic-icon').classList.remove('hidden');
+                    document.getElementById('bot-save-btn').innerText = "CREATE BOT";
+                    admin.ui.open('ov-create-bot');
+                },
+                openEditModal: (botId) => {
+                    const bot = window.admin.data.bots[botId];
+                    if(!bot) return;
+                    document.getElementById('bot-header-title').innerText = "Edit Virtual Seller";
+                    document.getElementById('bot-id-edit').value = botId;
+                    document.getElementById('bot-name').value = bot.name;
+                    document.getElementById('bot-deals').value = bot.fake_deals_done || 0;
+                    document.getElementById('bot-pic-preview').src = bot.photo;
+                    document.getElementById('bot-pic-preview').classList.remove('hidden');
+                    document.getElementById('bot-pic-icon').classList.add('hidden');
+                    document.getElementById('bot-save-btn').innerText = "UPDATE BOT";
+                    admin.ui.open('ov-create-bot');
+                },
                 save: async () => {
+                    const botIdEdit = document.getElementById('bot-id-edit').value;
                     const name = document.getElementById('bot-name').value.trim();
                     const deals = document.getElementById('bot-deals').value;
                     const file = document.getElementById('bot-pic').files[0];
 
-                    if(!name || !file) return admin.ui.toast("Name and Picture required!", "error");
+                    if(!name) return admin.ui.toast("Name required!", "error");
+                    if(!botIdEdit && !file) return admin.ui.toast("Picture required for new bot!", "error");
 
-                    admin.ui.loading(true, "Creating Bot...");
+                    admin.ui.loading(true, "Saving Bot...");
                     try {
-                        const photoUrl = await uploadToCloudflare(file, 'pfps');
-                        const botId = 'bot_' + Date.now();
-                        await set(ref(db, `virtual_users/${botId}`), {
-                            name: name, photo: photoUrl, verified: true, 
-                            fake_deals_done: Number(deals) || 0, fake_deals_pending: 1, wallet: 0
-                        });
+                        let updates = {
+                            name: name,
+                            fake_deals_done: Number(deals) || 0
+                        };
+
+                        if(file) {
+                            updates.photo = await uploadToCloudflare(file, 'pfps');
+                        }
+
+                        if(botIdEdit) {
+                            await update(ref(db, `virtual_users/${botIdEdit}`), updates);
+                            admin.ui.toast("Bot Updated Successfully!");
+                        } else {
+                            const botId = 'bot_' + Date.now();
+                            updates.verified = true;
+                            updates.fake_deals_pending = 1;
+                            updates.wallet = 0;
+                            await set(ref(db, `virtual_users/${botId}`), updates);
+                            admin.ui.toast("Bot Created Successfully!");
+                        }
 
                         admin.ui.loading(false);
-                        admin.ui.toast("Bot Created Successfully!");
                         admin.ui.close('ov-create-bot');
                     } catch(e) {
                         admin.ui.loading(false);
-                        admin.ui.toast("Error creating bot", "error");
+                        admin.ui.toast("Error saving bot", "error");
                     }
                 },
                 openPostModal: () => {
@@ -931,7 +1213,9 @@
                     document.getElementById('mp-thumb').value = '';
                     document.getElementById('mp-thumb-preview').classList.add('hidden');
                     document.getElementById('mp-thumb-icon').classList.remove('hidden');
-                    document.getElementById('mp-boost').checked = false;
+                    document.getElementById('mp-boost').checked = true; // Auto boost bot posts
+                    document.getElementById('mp-boost-days-div').style.display = 'block';
+                    document.getElementById('mp-boost-days').value = 30;
                     
                     for(let i=0; i<5; i++) {
                         document.getElementById(`mp-f${i}`).value = '';
